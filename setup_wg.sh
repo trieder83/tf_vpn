@@ -30,7 +30,7 @@ for c in "${clients[@]}"
     peers+="
 [Peer] # ${c}
 PublicKey = ${ckey}
-AllowedIPs = 10.200.200.${index}/32
+AllowedIPs = 10.10.0.${index}/32
 
 "    
 done
@@ -46,9 +46,9 @@ for c in "${clients[@]}"
     cpkey="$(cat keys/${c}_private_key)"
     echo "
 [Interface] 
-Address = 10.200.200.${index}/32
+Address = 10.100.0.${index}/32
 PrivateKey = ${cpkey}
-DNS = 10.200.200.1 
+DNS = 10.10.0.1 
 
 [Peer]
 PublicKey = $(cat 'keys/server_public_key')
@@ -84,10 +84,10 @@ done
 echo " 
 [Interface]
 PrivateKey = $(cat keys/server_private_key)
-Address = 10.200.200.1/24
+Address = 10.10.0.1/24
 ListenPort = 51820
-PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o ens3 -j MASQUERADE; ip6tables -A FORWARD -i wg0 -j ACCEPT; ip6tables -t nat -A POSTROUTING -o ens3 -j MASQUERADE; iptables -t nat -A POSTROUTING -s 10.200.200.0/24 -o eth0 -j MASQUERADE
-PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o ens3 -j MASQUERADE; ip6tables -D FORWARD -i wg0 -j ACCEPT; ip6tables -t nat -D POSTROUTING -o ens3 -j MASQUERADE; iptables -t nat -D POSTROUTING -s 10.200.200.0/24 -o eth0 -j MASQUERADE
+PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o ens3 -j MASQUERADE; ip6tables -A FORWARD -i wg0 -j ACCEPT; ip6tables -t nat -A POSTROUTING -o ens3 -j MASQUERADE; iptables -t nat -A POSTROUTING -s 10.10.0.0/24 -o eth0 -j MASQUERADE
+PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o ens3 -j MASQUERADE; ip6tables -D FORWARD -i wg0 -j ACCEPT; ip6tables -t nat -D POSTROUTING -o ens3 -j MASQUERADE; iptables -t nat -D POSTROUTING -s 10.10.0.0/24 -o eth0 -j MASQUERADE
 SaveConfig = true
 $(getPeers)
 " |  tee clients/wg0.conf 
@@ -104,8 +104,8 @@ sudo iptables -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 #VPN traffic on the listening port
 sudo iptables -A INPUT -p udp -m udp --dport 51820 -m conntrack --ctstate NEW -j ACCEPT
 #TCP and UDP recursive DNS traffic
-sudo iptables -A INPUT -s 10.200.200.0/24 -p tcp -m tcp --dport 53 -m conntrack --ctstate NEW -j ACCEPT
-sudo iptables -A INPUT -s 10.200.200.0/24 -p udp -m udp --dport 53 -m conntrack --ctstate NEW -j ACCEPT
+sudo iptables -A INPUT -s 10.10.0.0/24 -p tcp -m tcp --dport 53 -m conntrack --ctstate NEW -j ACCEPT
+sudo iptables -A INPUT -s 10.10.0.0/24 -p udp -m udp --dport 53 -m conntrack --ctstate NEW -j ACCEPT
 #Allow forwarding of packets that stay in the VPN tunnel
 sudo iptables -A FORWARD -i wg0 -o wg0 -m conntrack --ctstate NEW -j ACCEPT
 
@@ -133,9 +133,9 @@ server:
     # IPs authorised to access the DNS Server
     access-control: 0.0.0.0/0                 refuse
     access-control: 127.0.0.1                 allow
-    access-control: 10.200.200.0/24             allow
+    access-control: 10.10.0.0/24             allow
     # not allowed to be returned for public Internet  names
-    private-address: 10.200.200.0/24
+    private-address: 10.10.0.0/24
     #hide DNS Server info
     hide-identity: yes
     hide-version: yes

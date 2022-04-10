@@ -2,7 +2,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 3.27"
+      version = "~> 3.0"
     }
   }
 
@@ -14,21 +14,14 @@ provider "aws" {
   region  = "eu-central-1"
 }
 
-resource "aws_lightsail_key_pair" "lightsail_wg_key_pair" {
-  name       = "wg_instance_key"
-  public_key = "${file("wg_vpn.key.pub")}"
-}
-
-# Create a new GitLab Lightsail Instance
-resource "aws_lightsail_instance" "wg_vpn" {
-  name              = "wg-vpn"
+resource "aws_instance" "wg_vpn" {
+  ami           = "ami-0d527b8c289b4af7f" # Ubuntu Server 20.04 LTS (HVM), SSD Volume Type
+  instance_type = "t2.micro"
   availability_zone = var.aws_availability_zone_a
-  blueprint_id      = "ubuntu_20_04"
-  bundle_id         = "nano_2_0"
-  key_pair_name     = "wg_instance_key"
-  tags = {
-    env = "tftest"
-  }
+  #associate_public_ip_address
+  #iam_instance_profile
+  #security_groups
+  #subnet_id
 
   provisioner "file" {
     source      = "setup_wg.sh"
@@ -37,7 +30,7 @@ resource "aws_lightsail_instance" "wg_vpn" {
     connection {
       type     = "ssh"
       user     = "ubuntu"
-      host     = self.public_ip_address
+      host     = self.public_ip
       private_key = "${file(var.ssh_wg_key_private)}"
     }
 
@@ -46,24 +39,22 @@ resource "aws_lightsail_instance" "wg_vpn" {
   provisioner "remote-exec" {
       inline = [
       "chmod +x /tmp/setup_wg.sh",
-      "/tmp/setup_wg.sh ${self.public_ip_address}"
+      "/tmp/setup_wg.sh ${self.public_ip}"
     ]
     connection {
       type     = "ssh"
       user     = "ubuntu"
-      host     = self.public_ip_address
+      host     = self.public_ip
       private_key = "${file(var.ssh_wg_key_private)}"
     }
   }
-  
-}
 
-resource "aws_lightsail_instance_public_ports" "test" {
-  instance_name = aws_lightsail_instance.wg_vpn.name
 
-  port_info {
-    protocol  = "tcp"
-    from_port = 22
-    to_port   = 22
+  depends_on = [
+    module.vpc.main_vpc,
+  ]
+
+  tags = {
+    env = "tftest"
   }
 }
