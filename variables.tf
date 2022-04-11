@@ -15,6 +15,12 @@ variable "ssh_wg_key_private" {
   type = string
   default = "wg_vpn.key"
 }
+variable "ssh_wg_key_public_file" {
+  description = "ssh public key file name"
+  type = string
+  default = "wg_vpn.key.pub"
+}
+
 
 variable "instance_vpn_name" {
   default = "wgvpn001"

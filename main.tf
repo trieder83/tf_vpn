@@ -22,18 +22,11 @@ resource "aws_instance" "wg_vpn" {
   #iam_instance_profile
   #security_groups
   #subnet_id
+  key_name = "${aws_key_pair.tftest-key-pair.id}"
 
   provisioner "file" {
     source      = "setup_wg.sh"
     destination = "/tmp/setup_wg.sh"
-
-    connection {
-      type     = "ssh"
-      user     = "ubuntu"
-      host     = self.public_ip
-      private_key = "${file(var.ssh_wg_key_private)}"
-    }
-
   }
 
   provisioner "remote-exec" {
@@ -41,12 +34,12 @@ resource "aws_instance" "wg_vpn" {
       "chmod +x /tmp/setup_wg.sh",
       "/tmp/setup_wg.sh ${self.public_ip}"
     ]
-    connection {
-      type     = "ssh"
-      user     = "ubuntu"
-      host     = self.public_ip
-      private_key = "${file(var.ssh_wg_key_private)}"
-    }
+  }
+
+  connection {
+    user = "ubuntu"
+    host     = self.public_ip
+    private_key = "${file(var.ssh_wg_key_private)}"
   }
 
 
@@ -57,4 +50,10 @@ resource "aws_instance" "wg_vpn" {
   tags = {
     env = "tftest"
   }
+}
+
+// Sends your public key to the instance
+resource "aws_key_pair" "tftest-key-pair" {
+    key_name = "tftest-key-pair"
+    public_key = "${file(var.ssh_wg_key_public_file)}"
 }

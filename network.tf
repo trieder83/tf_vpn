@@ -31,3 +31,14 @@ resource "aws_security_group" "ssh-allowed" {
       module.vpc.main_vpc,
     ]
 }
+
+resource "aws_internet_gateway" "gw" {
+  vpc_id = module.vpc.vpc_id
+
+  tags = {
+    Name = "main"
+    env = "tftest"
+  }
+}
+
+
